@@ -98,3 +98,34 @@ def get_landmarker() -> Optional[mp_vision.PoseLandmarker]:
     print("[OK] MediaPipe PoseLandmarker loaded.")
     return _landmarker
 
+def get_crick_engine() -> CrickLMInference:
+    global _crick_engine
+    if _crick_engine is None:
+        ckpt = Path(__file__).parent/"cricklm"/"checkpoints"/"best.pt"
+        tok = Path(__file__).parent/"cricklm"/"checkpoints"/"tokenizer.json"
+        _crick_engine = CrickLMInference(
+            checkpoint_path = str(ckpt),
+            tokenizer_path = str(tok),
+        )
+    return _crick_engine
+
+# Geometry helpers
+def calc_angle(a,b,c) -> float:
+    ax, ay = a;  bx, by = b;  cx, cy = c
+    ba = (ax - bx, ay - by)
+    bc = (cx - bx, cy - by)
+    dot = ba[0]*bc[0] + ba[1]*bc[1]
+    mag = math.hypot(*ba) * math.hypot(*bc)
+    if mag == 0:
+        return 0.0
+    return math.degrees(math.acos(max(-1.0, min(1.0,dot / mag))))
+
+def resize_image(img: np.ndarray, max_dim: int = MAX_DIM) -> np.ndarray:
+    h,w = img.shape[:2]
+    if max(h, w) <= max_dim:
+        return img
+    scale = max_dim / max(h,w)
+    return cv2.resize(img, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_AREA)
+
+
+        
