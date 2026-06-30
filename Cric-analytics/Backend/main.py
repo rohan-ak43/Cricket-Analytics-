@@ -148,6 +148,102 @@ def extract_pose(img_bgr: np.ndarray) -> dict:
         if not result.pose_landmarks or len(result.pose_landmarks) == 0:
             return {"detected": False, "error": "No human pose detected in image."}
         
+        lms = result.pose_landmarks[0]
+
+        def px(idx):
+            lm = lms[idx]
+            return int(lm.x * w), int(lm.y * h)
+        
+        def vis(idx):
+            return round(lms[idx].visibility,3)
+        
+    # fallback (temporary)
+    else:
+        print("[WARN] Using heuristic pose fallback (no MediaPipe model)")
+        hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, (0,30,60), (20,180,255))
+        ys, xs = np.where(mask > 0)
+        if len(xs) == 0:
+            return {"detected": False, "error": "No pose detected (heuristic fallback)."}
+        cx_body = int(np.mean(xs))
+        cy_body = int(np.mean(ys))
+
+        def px(idx):
+            offsets = {
+                NOSE: (0, -h//4), LEFT_SHOULDER: (-w//8, -h//6),
+                RIGHT_SHOULDER: (w//8, -h//6),
+                LEFT_ELBOW: (-w//6, 0), RIGHT_ELBOW: (w//6, -h//16),
+                LEFT_WRIST: (-w//5, h//8), RIGHT_WRIST: (w//5, h//16),
+                LEFT_HIP: (-w//10, h//8), RIGHT_HIP: (w//10, h//8),
+                LEFT_KNEE: (-w//10, h//4), RIGHT_KNEE: (w//10, h//4),
+                LEFT_ANKLE: (-w//10, h//2-h//8), RIGHT_ANKLE: (w//10, h//2-h//8),
+            }
+            dx, dy = offsets.get(idx(0,0))
+            return (cx_body + dx, cy_body + dy)
+        
+        def vis(idx):
+            return 0.95
+
+    # computation of joint angles
+    angles = {}
+    for name, (a_idx,b_idx,c_idx) in ANGLE_JOINTS.items():
+        try:
+            if vis(a_idx) < 0.3 or vis(b_idx) < 0.3 or vis(c_idx) < 0.3:
+                angles[name] = None
+                continue
+            angles[name] = round(calc_angle(px(a_idx), px(b_idx), px(c_idx)), 1)
+        except Exception:
+            angles[name] = None
+    
+    # body metrics
+    rs = px(RIGHT_SHOULDER); ls = px(LEFT_SHOULDER)
+    rh = px(RIGHT_HIP);      lh = px(LEFT_HIP)
+    ra = px(RIGHT_ANKLE);    la = px(LEFT_ANKLE)
+    nose_pt = px(NOSE)
+    rw = px(RIGHT_WRIST);    lw = px(LEFT_WRIST)
+ 
+    shoulder_w = abs(rs[0] - ls[0])
+    stance_w   = abs(ra[0] - la[0])
+    body_cx    = (rh[0] + lh[0]) // 2
+    head_off   = nose_pt[0] - body_cx
+    lead_wrist = min(rw[1], lw[1])
+    wrist_h    = round(1 - lead_wrist / max(h, 1), 3)
+ 
+    shoulder_angle = math.degrees(
+        math.atan2(rs[1]-ls[1], rs[0]-ls[0])
+    )
+    hip_angle = math.degrees(
+        math.atan2(rh[1]-lh[1], rh[0]-lh[0])
+    )
+ 
+    metrics = {
+        "shoulder_width_px":              shoulder_w,
+        "stance_width_px":                stance_w,
+        "head_offset_from_center_px":     round(head_off, 1),
+        "shoulder_alignment_angle_deg":   round(shoulder_angle, 1),
+        "hip_alignment_angle_deg":        round(hip_angle, 1),
+        "wrist_height_normalized":        wrist_h,
+        "stance_to_shoulder_ratio":       round(stance_w / max(shoulder_w, 1), 3),
+    }
+
+    # store pixels
+    keypoints = {
+        "nose": px(NOSE),
+        "left_shoulder": px(LEFT_SHOULDER), "right_shoulder": px(RIGHT_SHOULDER),
+        "left_elbow": px(LEFT_ELBOW),       "right_elbow": px(RIGHT_ELBOW),
+        "left_wrist": px(LEFT_WRIST),       "right_wrist": px(RIGHT_WRIST),
+        "left_hip": px(LEFT_HIP),           "right_hip": px(RIGHT_HIP),
+        "left_knee": px(LEFT_KNEE),         "right_knee": px(RIGHT_KNEE),
+        "left_ankle": px(LEFT_ANKLE),       "right_ankle": px(RIGHT_ANKLE),
+    }
+ 
+    return {
+        "detected":       True,
+        "image_size":     {"width": w, "height": h},
+        "joint_angles_deg": angles,
+        "body_metrics":   metrics,
+        "_keypoints_px":  keypoints,   
+    }
 
 
         
