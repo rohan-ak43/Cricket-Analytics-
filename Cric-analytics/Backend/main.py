@@ -245,5 +245,86 @@ def extract_pose(img_bgr: np.ndarray) -> dict:
         "_keypoints_px":  keypoints,   
     }
 
+# 2 skeleton overlay
+def draw_skeleton(img_bgr: np.ndarray, features: dict) -> np.ndarray:
+    if not features.get("detected"):
+        return img_bgr
+    
+    kp = features["_keypoints_px"]
+    angles = features["joint_angles_deg"]
+    h, w = img_bgr.shape[:2]
+ 
+    overlay = img_bgr.copy()
 
+    dark = np.zeros_like(overlay)
+    cv2.addWeighted(overlay, 0.62, dark, 0.38, 0, overlay)
+
+    idx_to_key = {
+        NOSE: "nose",
+        LEFT_SHOULDER: "left_shoulder",   RIGHT_SHOULDER: "right_shoulder",
+        LEFT_ELBOW:    "left_elbow",       RIGHT_ELBOW:    "right_elbow",
+        LEFT_WRIST:    "left_wrist",       RIGHT_WRIST:    "right_wrist",
+        LEFT_HIP:      "left_hip",         RIGHT_HIP:      "right_hip",
+        LEFT_KNEE:     "left_knee",        RIGHT_KNEE:     "right_knee",
+        LEFT_ANKLE:    "left_ankle",       RIGHT_ANKLE:    "right_ankle",
+    }
+
+    # bones
+    for (a_idx, b_idx) in CONNECTIONS:
+        a_key = idx_to_key.get(a_idx)
+        b_key = idx_to_key.get(b_idx)
+
+        if a_key not in kp or b_key not in kp:
+            continue
+
+        pt1 = tuple(kp[a_key])
+        pt2 = tuple(kp[b_key])
+        cv2.line(overlay, pt1, pt2, (20, 100, 20), 8, cv2.LINE_AA)
+        cv2.line(overlay, pt1, pt2, GREEN, 2, cv2.LINE_AA)
+
+    # joints
+    for key, pt in kp.items():
+        pt = tuple(pt)  
+        is_head = key == "nose"
+        r_outer = 12 if is_head else 7
+        r_inner = 7  if is_head else 4
+        cv2.circle(overlay, pt, r_outer + 4, (15, 60, 15), -1, cv2.LINE_AA)
+        cv2.circle(overlay, pt, r_outer,     GREEN,          -1, cv2.LINE_AA)
+        cv2.circle(overlay, pt, r_inner,     (200, 255, 200), -1, cv2.LINE_AA)   
+
+    # angle annotations
+    joint_label_map = {
+        "right_elbow": "right_elbow", "left_elbow": "left_elbow",
+        "right_knee":  "right_knee",  "left_knee":  "left_knee",
+    }
+
+    for angle_key, kp_key in joint_label_map.items():
+        val = angles.get(angle_key)
+        if val is None or kp_key not in kp:
+            continue
+        pt = tuple(kp[kp_key])
+        label = f"{int(val)}\u00b0"
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.48, 1)
+        tx = pt[0] + 12
+        ty = pt[1] - th - 4
+        # Pill background
+        cv2.rectangle(overlay,
+                      (tx - 4, ty - 3),
+                      (tx + tw + 4, ty + th + 3),
+                      (8, 8, 8), -1)
+        cv2.rectangle(overlay,
+                      (tx - 4, ty - 3),
+                      (tx + tw + 4, ty + th + 3),
+                      GREEN, 1)
+        cv2.putText(overlay, label, (tx, ty + th),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.48, GREEN, 1, cv2.LINE_AA)
+        
+    # Watermark
+    cv2.putText(overlay, "CrickIQ  AI Analysis",
+                (10, h - 12), cv2.FONT_HERSHEY_SIMPLEX,
+                0.44, GREEN, 1, cv2.LINE_AA)
+ 
+    return overlay
+        
+    
         
