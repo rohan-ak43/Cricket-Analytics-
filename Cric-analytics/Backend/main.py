@@ -127,5 +127,27 @@ def resize_image(img: np.ndarray, max_dim: int = MAX_DIM) -> np.ndarray:
     scale = max_dim / max(h,w)
     return cv2.resize(img, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_AREA)
 
+def pill_to_bgr(pill_img: Image.Image) -> np.ndarray:
+    return cv2.cvtColor(np.array(pill_img.convert("RGB")), cv2.COLOR_RGB2BGR)
+
+def bgr_to_b64(img: np.ndarray) -> str:
+    _, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 88])
+    return base64.b64encode(buf.tobytes()).decode()
+
+# 1. Pose extraction
+def extract_pose(img_bgr: np.ndarray) -> dict:
+    h, w = img_bgr.shape[:2]
+    landmarker = get_landmarker()
+
+    # mediapipe path
+    if landmarker is not None:
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format = mp.ImageFormat.SRGB, data = img_rgb)
+        result = landmarker.detect(mp_image)
+
+        if not result.pose_landmarks or len(result.pose_landmarks) == 0:
+            return {"detected": False, "error": "No human pose detected in image."}
+        
+
 
         
