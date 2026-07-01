@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from PIL import Image 
 
 # cricketlm model 
-sys.path.insert(0, str(Path(__file__).parent / "Cricklm"))
+sys.path.insert(0, str(Path(__file__).parent / "cricklm"))
 from inference import  CrickLMInference
 
 # mediapipe tasks api
