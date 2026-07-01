@@ -127,7 +127,7 @@ def resize_image(img: np.ndarray, max_dim: int = MAX_DIM) -> np.ndarray:
     scale = max_dim / max(h,w)
     return cv2.resize(img, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_AREA)
 
-def pill_to_bgr(pill_img: Image.Image) -> np.ndarray:
+def pil_to_bgr(pill_img: Image.Image) -> np.ndarray:
     return cv2.cvtColor(np.array(pill_img.convert("RGB")), cv2.COLOR_RGB2BGR)
 
 def bgr_to_b64(img: np.ndarray) -> str:
@@ -325,6 +325,83 @@ def draw_skeleton(img_bgr: np.ndarray, features: dict) -> np.ndarray:
                 0.44, GREEN, 1, cv2.LINE_AA)
  
     return overlay
-        
-    
+
+# 3: CrickLM analysis
+def run_crick_analysis(features: dict, player_type: str) -> dict:
+    engine = get_crick_engine()
+    return engine.analyze(features, player_type)
+ 
+ 
+# API Routes 
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "service": "CrickIQ API",
+        "model": "CrickLM (local transformer)",
+        "mediapipe_model": MODEL_PATH.exists(),
+    }
+ 
+ 
+@app.post("/analyze")
+async def analyze(
+    file: UploadFile = File(...),
+    player_type: str = Form(default="batsman"),
+):
+    t0 = time.time()
+ 
+    # Validate 
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(400, "Only image files are supported (JPG, PNG, WEBP).")
+ 
+    contents = await file.read()
+    if len(contents) > 15 * 1024 * 1024:
+        raise HTTPException(400, "File too large. Maximum size is 15 MB.")
+ 
+    # Decode image
+    try:
+        pil_img = Image.open(io.BytesIO(contents))
+        img_bgr = pil_to_bgr(pil_img)
+    except Exception:
+        raise HTTPException(400, "Could not decode image. Please upload a valid JPG/PNG.")
+ 
+    img_bgr = resize_image(img_bgr)
+
+    #  Step 1: Pose extraction 
+    try:
+        features = extract_pose(img_bgr)
+    except Exception as e:
+        raise HTTPException(500, f"Pose extraction failed: {e}")
+ 
+    if not features.get("detected"):
+        raise HTTPException(422, features.get("error", "No pose detected."))
+ 
+    # Step 2: Skeleton overlay
+    try:
+        annotated    = draw_skeleton(img_bgr, features)
+        annotated_b64 = bgr_to_b64(annotated)
+    except Exception as e:
+        raise HTTPException(500, f"Skeleton overlay failed: {e}")
+ 
+    # Step 3: CrickLM analysis 
+    try:
+        analysis = run_crick_analysis(features, player_type)
+    except Exception as e:
+        raise HTTPException(500, f"CrickLM analysis failed: {e}")
+ 
+    elapsed = round(time.time() - t0, 2)
+ 
+    # Strip internal keypoints from response
+    public_features = {
+        "joint_angles":  features["joint_angles_deg"],
+        "body_metrics":  features["body_metrics"],
+    }
+ 
+    return JSONResponse({
+        "success":         True,
+        "elapsed_seconds": elapsed,
+        "annotated_image": f"data:image/jpeg;base64,{annotated_b64}",
+        "features":        public_features,
+        "analysis":        analysis,
+    })
         
