@@ -33,7 +33,7 @@ allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
 # Constants
-Green = (74, 255, 92)
+GREEN = (74, 255, 92)
 MAX_DIM = 1080
 MODEL_PATH = Path(__file__).parent/"cricklm"/"pose_landmarker_full.task"
 

@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "C:\\Python313\\python.exe",
+  "python.analysis.extraPaths": [
+    "./Backend/cricklm",
+    "C:\\Users\\Rohan\\AppData\\Roaming\\Python\\Python313\\site-packages",
+    "C:\\Python313\\Lib\\site-packages"
+  ]
+}
