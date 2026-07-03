@@ -333,12 +333,12 @@ function Pipeline() {
 function Features() {
     const ref = useFadeUp();
     const cards = [
-        { icon: "🦾", t: "AI Biomechanics Engine", d: "33-point MediaPipe skeleton with joint angle computation across all cricket movements." },
-        { icon: "🏏", t: "Batting Weakness Detection", d: "Identifies playing across the line, late footwork, head fall, and closed bat face." },
-        { icon: "⚡", t: "Bowling Action Breakdown", d: "Front-on vs side-on, illegal action flags, release height & front knee analysis." },
-        { icon: "🎯", t: "Vulnerability Prediction", d: "AI maps your weaknesses to the specific delivery most likely to dismiss you." },
-        { icon: "🧠", t: "CrickLM — Built from Scratch", d: "10M parameter transformer trained on cricket commentary & coaching text. No external API." },
-        { icon: "📈", t: "Session History", d: "Track biomechanical progress across sessions with a Firebase-backed coach dashboard." },
+        { icon: "01", t: "AI Biomechanics Engine", d: "33-point MediaPipe skeleton with joint angle computation across all cricket movements." },
+        { icon: "02", t: "Batting Weakness Detection", d: "Identifies playing across the line, late footwork, head fall, and closed bat face." },
+        { icon: "03", t: "Bowling Action Breakdown", d: "Front-on vs side-on, illegal action flags, release height & front knee analysis." },
+        { icon: "04", t: "Vulnerability Prediction", d: "AI maps your weaknesses to the specific delivery most likely to dismiss you." },
+        { icon: "05", t: "CrickLM — Built from Scratch", d: "10M parameter transformer trained on cricket commentary & coaching text. No external API." },
+        { icon: "06", t: "Session History", d: "Track biomechanical progress across sessions with a Firebase-backed coach dashboard." },
     ];
     return (
         <section id="features" style={{ padding: "120px 80px", background: "rgba(255,255,255,.008)" }}>
@@ -355,7 +355,10 @@ function Features() {
                     return (
                         <div key={i} ref={r} className="fuv" style={{ transitionDelay: `${i * .07}s` }}>
                             <GlassCard style={{ padding: "26px", height: "100%" }}>
-                                <div style={{ fontSize: 26, marginBottom: 14 }}>{c.icon}</div>
+                                <div style={{
+                                    fontFamily: "'Bebas Neue', sans-serif", fontSize: 13,
+                                    color: "rgba(255,255,255,0.2)", letterSpacing: 2, marginBottom: 16
+                                }}>{c.icon}</div>
                                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{c.t}</div>
                                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}>{c.d}</div>
                             </GlassCard>
@@ -490,7 +493,10 @@ function UploadZone({ onFile, loading }: { onFile: (f: File) => void; loading: b
                 </div>
             ) : (
                 <>
-                    <div style={{ fontSize: 40, marginBottom: 16 }}>🏏</div>
+                    <svg width="40" height="40" viewBox="0 0 40 40" style={{ marginBottom: 16, opacity: 0.5 }}>
+                        <rect x="4" y="26" width="32" height="2" rx="1" fill="#fff" />
+                        <path d="M20 6 L20 22 M13 13 L20 6 L27 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
                     <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Drop image here or click to upload</p>
                     <p style={{ fontSize: 12, color: "rgba(255,255,255,.38)", marginBottom: 20 }}>JPG · PNG · WEBP · max 15 MB</p>
                     <Pill>Batting & bowling stance analysis</Pill>
@@ -640,8 +646,9 @@ function ResultPanel({ result }: { result: ApiResult }) {
                                     <div style={{
                                         width: 34, height: 34, borderRadius: 8,
                                         background: "rgba(239,68,68,.08)", display: "flex",
-                                        alignItems: "center", justifyContent: "center", flexShrink: 0
-                                    }}>🎯</div>
+                                        alignItems: "center", justifyContent: "center", flexShrink: 0,
+                                        fontSize: 14, color: "rgba(239,68,68,0.7)", fontWeight: 700
+                                    }}>◈</div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{z.delivery}</div>
                                         <div style={{ fontSize: 11, color: "rgba(255,255,255,.42)", lineHeight: 1.6 }}>{z.reason}</div>
@@ -687,11 +694,11 @@ function ResultPanel({ result }: { result: ApiResult }) {
                                             {d.duration && <span style={{
                                                 fontSize: 10, color: "rgba(255,255,255,.3)",
                                                 background: "rgba(255,255,255,.04)", padding: "2px 8px", borderRadius: 5
-                                            }}>⏱ {d.duration}</span>}
+                                            }}>{d.duration}</span>}
                                             {d.targets && <span style={{
                                                 fontSize: 10, color: "rgba(255,255,255,.3)",
                                                 background: "rgba(255,255,255,.04)", padding: "2px 8px", borderRadius: 5
-                                            }}>🎯 {d.targets}</span>}
+                                            }}>{d.targets}</span>}
                                         </div>
                                     )}
                                 </div>
@@ -831,7 +838,7 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                                         fontSize: 13, fontWeight: 500, cursor: "pointer",
                                         fontFamily: "Inter", transition: "all .2s", backdropFilter: "blur(8px)"
                                     }}>
-                                    {t === "batsman" ? "🏏 Batsman" : "⚡ Bowler"}
+                                    {t === "batsman" ? "Batsman" : "Bowler"}
                                 </button>
                             ))}
                         </div>
@@ -893,14 +900,18 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                                     letterSpacing: .5, marginBottom: 16
                                 }}>WHAT YOU'LL GET</div>
                                 {[
-                                    ["🦴", "Skeleton overlay", "33-point MediaPipe pose mapped onto your image"],
-                                    ["📐", "Joint angles", "Elbow, knee, shoulder, hip angles measured precisely"],
-                                    ["⚠", "Weakness detection", "CrickLM identifies biomechanical flaws in your stance"],
-                                    ["🎯", "Vulnerable zones", "Deliveries most likely to dismiss you based on your gaps"],
-                                    ["🏋", "Drill plan", "3–4 targeted drills with duration and focus areas"],
+                                    ["01", "Skeleton overlay", "33-point MediaPipe pose mapped onto your image"],
+                                    ["02", "Joint angles", "Elbow, knee, shoulder, hip angles measured precisely"],
+                                    ["03", "Weakness detection", "CrickLM identifies biomechanical flaws in your stance"],
+                                    ["04", "Vulnerable zones", "Deliveries most likely to dismiss you based on your gaps"],
+                                    ["05", "Drill plan", "3–4 targeted drills with duration and focus areas"],
                                 ].map(([icon, title, desc]) => (
                                     <div key={String(title)} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                                        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                                        <span style={{
+                                            fontFamily: "'Bebas Neue', sans-serif", fontSize: 11,
+                                            color: "rgba(255,255,255,0.22)", flexShrink: 0,
+                                            marginTop: 2, letterSpacing: 1, minWidth: 20
+                                        }}>{icon}</span>
                                         <div>
                                             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{title}</div>
                                             <div style={{ fontSize: 11, color: "rgba(255,255,255,.38)", lineHeight: 1.6 }}>{desc}</div>
@@ -909,12 +920,10 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                                 ))}
                             </GlassCard>
                             <GlassCard hover={false} style={{ padding: "16px 20px" }}>
-                                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                                    <span style={{ fontSize: 14, flexShrink: 0 }}>💡</span>
-                                    <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", lineHeight: 1.7 }}>
-                                        <strong style={{ color: "rgba(255,255,255,.7)" }}>Best results:</strong>{" "}
-                                        Clear side-on or front-on full-body shot. Natural light, plain background.
-                                    </div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: 1.5, marginBottom: 6 }}>TIP</div>
+                                <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)", lineHeight: 1.7 }}>
+                                    <strong style={{ color: "rgba(255,255,255,.7)" }}>Best results:</strong>{" "}
+                                    Clear side-on or front-on full-body shot. Natural light, plain background.
                                 </div>
                             </GlassCard>
                         </div>
