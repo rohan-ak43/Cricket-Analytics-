@@ -191,7 +191,7 @@ function Navbar({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
                 <span className="bb" style={{ fontSize: 21, letterSpacing: 2 }}>CrickIQ</span>
             </div>
             <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
-                {["Features", "Pipeline", "Pricing"].map(l => (
+                {["Features", "Pipeline"].map(l => (
                     <a key={l} href={`#${l.toLowerCase()}`}
                         style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, textDecoration: "none", transition: "color .2s" }}
                         onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
@@ -279,34 +279,7 @@ function Hero({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
     );
 }
 
-function TrustedBy() {
-    const orgs = ["Chennai Super Kings", "BCCI Academy", "ProFormance Labs", "Elite Cricket Co.",
-        "Pitch Vision", "SportsAI Global", "Titan CC", "NCA Bangalore"];
-    return (
-        <section style={{
-            padding: "44px 0", borderTop: `1px solid ${BORDER}`,
-            borderBottom: `1px solid ${BORDER}`, overflow: "hidden"
-        }}>
-            <p style={{
-                textAlign: "center", fontSize: 10, color: "rgba(255,255,255,0.28)",
-                letterSpacing: 2, marginBottom: 20
-            }}>TRUSTED BY LEADING ACADEMIES & CLUBS</p>
-            <div style={{ overflow: "hidden" }}>
-                <div className="mq">
-                    {[...orgs, ...orgs].map((o, i) => (
-                        <span key={i} style={{
-                            flex: "0 0 auto", padding: "0 44px",
-                            color: "rgba(255,255,255,0.22)", fontSize: 13, fontWeight: 500,
-                            letterSpacing: .4, whiteSpace: "nowrap", transition: "color .3s"
-                        }}
-                            onMouseEnter={e => (e.currentTarget.style.color = "#ffffff")}
-                            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.22)")}>{o}</span>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
+// TrustedBy section removed
 
 function Pipeline() {
     const ref = useFadeUp();
@@ -394,77 +367,6 @@ function Features() {
     );
 }
 
-function Pricing({ onCTA }: { onCTA: () => void }) {
-    const ref = useFadeUp();
-    const plans = [
-        {
-            name: "Starter", price: "₹0", period: "free forever",
-            features: ["5 analyses/month", "Image uploads only", "Basic weakness report", "Community support"],
-            cta: "Get started free", hi: false
-        },
-        {
-            name: "Pro", price: "₹799", period: "/month",
-            features: ["Unlimited analyses", "Video + Image uploads", "Full AI report + drills",
-                "Pro comparison mode", "PDF export", "Priority support"],
-            cta: "Start Pro trial", hi: true
-        },
-        {
-            name: "Academy", price: "₹3,999", period: "/month",
-            features: ["Everything in Pro", "50 player profiles", "Coach dashboard",
-                "Session history", "API access", "Dedicated support"],
-            cta: "Contact sales", hi: false
-        },
-    ];
-    return (
-        <section id="pricing" style={{ padding: "120px 80px", background: "rgba(255,255,255,.008)" }}>
-            <div ref={ref} className="fuv" style={{ textAlign: "center", marginBottom: 60 }}>
-                <p style={{ fontSize: 10, color: G_SILVER, letterSpacing: 2, marginBottom: 10 }}>PRICING</p>
-                <h2 className="bb" style={{ fontSize: "clamp(44px,5.5vw,68px)", letterSpacing: 1 }}>Start free. Scale up.</h2>
-            </div>
-            <div style={{
-                display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(255px,1fr))",
-                gap: 14, maxWidth: 880, margin: "0 auto"
-            }}>
-                {plans.map((p, i) => {
-                    const r = useFadeUp();
-                    return (
-                        <div key={i} ref={r} className="fuv" style={{ transitionDelay: `${i * .08}s` }}>
-                            <div style={{
-                                background: p.hi ? `linear-gradient(135deg, #1c1c1e, #0a0a0a)` : GLASS,
-                                border: `1px solid ${p.hi ? "rgba(255, 255, 255, 0.35)" : BORDER}`, borderRadius: 18, padding: "28px 24px",
-                                backdropFilter: "blur(12px)",
-                                boxShadow: p.hi ? `0 0 40px rgba(255, 255, 255, 0.08)` : "none",
-                                position: "relative", height: "100%"
-                            }}>
-                                {p.hi && <div style={{
-                                    position: "absolute", top: -11, left: "50%",
-                                    transform: "translateX(-50%)", background: G, color: "#000",
-                                    fontSize: 9, fontWeight: 700, letterSpacing: 1, padding: "3px 12px", borderRadius: 100
-                                }}>
-                                    MOST POPULAR</div>}
-                                <div style={{
-                                    fontSize: 11, color: p.hi ? "#ffffff" : G_SILVER,
-                                    letterSpacing: 1, marginBottom: 6
-                                }}>{p.name.toUpperCase()}</div>
-                                <div className="bb" style={{ fontSize: 46, letterSpacing: 1, color: p.hi ? G : "#fff" }}>{p.price}</div>
-                                <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginBottom: 24, marginTop: 2 }}>{p.period}</div>
-                                {p.features.map((f, j) => (
-                                    <div key={j} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
-                                        <span style={{ color: G, fontSize: 12, marginTop: 1, flexShrink: 0 }}>✓</span>
-                                        <span style={{ fontSize: 12, color: "rgba(255,255,255,.55)" }}>{f}</span>
-                                    </div>
-                                ))}
-                                <div style={{ marginTop: 22 }}>
-                                    <Btn onClick={onCTA} variant={p.hi ? "solid" : "outline"} style={{ width: "100%" }}>{p.cta}</Btn>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </section>
-    );
-}
 
 function FinalCTA({ onCTA }: { onCTA: () => void }) {
     const ref = useFadeUp();
@@ -1066,10 +968,8 @@ export default function App() {
                 <>
                     <Navbar scrollY={scrollY} onCTA={launchApp} />
                     <Hero scrollY={scrollY} onCTA={launchApp} />
-                    <TrustedBy />
                     <Pipeline />
                     <Features />
-                    <Pricing onCTA={launchApp} />
                     <FinalCTA onCTA={launchApp} />
                     <Footer />
                 </>
