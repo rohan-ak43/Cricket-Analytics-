@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// Design tokens 
 const G = "#ffffff";
 const G_SILVER = "#86868b";
 const G2 = "rgba(255, 255, 255, 0.08)";
@@ -10,7 +10,7 @@ const GLASS = "rgba(255, 255, 255, 0.03)";
 const BORDER = "rgba(255, 255, 255, 0.08)";
 const API_URL = "http://localhost:8000";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// Types 
 interface Weakness { title: string; detail: string; severity: string; joint: string }
 interface Zone { delivery: string; reason: string; risk: string }
 interface Drill { name: string; description: string; duration: string; targets: string }
@@ -27,7 +27,7 @@ interface ApiResult {
     analysis: Analysis;
 }
 
-// ── Global styles ─────────────────────────────────────────────────────────────
+// Global styles 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Bebas+Neue&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -50,7 +50,7 @@ body{background:#000000;color:#fff;font-family:'Inter',sans-serif;overflow-x:hid
 .text-gradient{background:linear-gradient(180deg,#ffffff 20%,#86868b 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 `;
 
-// ── Hooks ─────────────────────────────────────────────────────────────────────
+// Hooks 
 function useFadeUp() {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -62,7 +62,7 @@ function useFadeUp() {
     return ref;
 }
 
-// ── Shared primitives ──────────────────────────────────────────────────────────
+// Shared primitives 
 function Pill({ children, color = G }: { children: React.ReactNode; color?: string }) {
     return (
         <span style={{
@@ -121,7 +121,7 @@ function Btn({ children, variant = "solid", onClick, style = {}, disabled = fals
     );
 }
 
-// ── Skeleton SVG ──────────────────────────────────────────────────────────────
+// Skeleton SVG 
 function SkeletonPlayer({ scrollY = 0 }: { scrollY?: number }) {
     const swing = Math.min((scrollY / 400) * 30, 28);
     const J: [number, number][] = [
@@ -167,9 +167,7 @@ function SkeletonPlayer({ scrollY = 0 }: { scrollY?: number }) {
     );
 }
 
-// ═══════════════════════════════════════════════════════════════
 // LANDING PAGE
-// ═══════════════════════════════════════════════════════════════
 
 function Navbar({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
     const solid = scrollY > 60;
@@ -435,9 +433,7 @@ function Footer() {
     );
 }
 
-// ═══════════════════════════════════════════════════════════════
 // ANALYSIS APP
-// ═══════════════════════════════════════════════════════════════
 
 function ScoreRing({ value, size = 64, label }: { value: number; size?: number; label: string }) {
     const r = size / 2 - 6;
@@ -952,9 +948,8 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
     );
 }
 
-// ═══════════════════════════════════════════════════════════════
 // ROOT
-// ═══════════════════════════════════════════════════════════════
+
 export default function App() {
     const [view, setView] = useState<"landing" | "app">("landing");
     const [scrollY, setScrollY] = useState(0);
