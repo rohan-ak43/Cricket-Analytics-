@@ -224,7 +224,6 @@ function Hero({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
             }} />
 
             <div style={{ flex: 1, maxWidth: 620, position: "relative", zIndex: 2 }}>
-                <div style={{ marginBottom: 28 }}><Pill>AI-POWERED CRICKET ANALYTICS</Pill></div>
                 <h1 className="bb" style={{
                     fontSize: "clamp(68px,8.5vw,116px)", lineHeight: .92,
                     letterSpacing: 2, marginBottom: 26,
@@ -814,7 +813,6 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                         <span style={{ fontSize: 11, color: "rgba(255,255,255,.25)" }}>Analysis Studio</span>
                     </div>
                 </div>
-                <Pill>CrickLM · Local Model</Pill>
             </div>
 
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 32px 60px" }}>
