@@ -501,7 +501,17 @@ function FinalCTA({ onCTA }: { onCTA: () => void }) {
     );
 }
 
-function Footer() {
+function Footer({ onProduct }: { onProduct: () => void }) {
+    const handleLink = (label: string, e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (label === "Product") {
+            e.preventDefault();
+            onProduct();
+        } else if (label === "Contact") {
+            e.preventDefault();
+            document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+
     return (
         <footer style={{
             borderTop: `1px solid ${BORDER}`, padding: "44px 80px",
@@ -519,8 +529,9 @@ function Footer() {
             </div>
             <div style={{ display: "flex", gap: 24 }}>
                 {["Product", "Docs", "API", "Privacy", "Contact"].map(l => (
-                    <a key={l} href="#"
-                        style={{ fontSize: 12, color: "rgba(255,255,255,.3)", textDecoration: "none", transition: "color .2s" }}
+                    <a key={l} href={l === "Product" || l === "Contact" ? "#" : "#"}
+                        onClick={(e) => handleLink(l, e)}
+                        style={{ fontSize: 12, color: "rgba(255,255,255,.3)", textDecoration: "none", transition: "color .2s", cursor: "pointer" }}
                         onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,.3)")}>{l}</a>
                 ))}
@@ -1074,7 +1085,7 @@ export default function App() {
                     <Features />
                     <FinalCTA onCTA={launchApp} />
                     <Contact />
-                    <Footer />
+                    <Footer onProduct={launchApp} />
                 </>
             )}
         </>
