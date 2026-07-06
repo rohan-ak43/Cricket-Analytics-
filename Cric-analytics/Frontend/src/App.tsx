@@ -189,13 +189,13 @@ function Navbar({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
                 <span className="bb" style={{ fontSize: 21, letterSpacing: 2 }}>CrickIQ</span>
             </div>
             <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
-                {["Features", "Pipeline", "Contact"].map(l => (
+                {["Pipeline", "Features", "Contact"].map(l => (
                     <a key={l} href={`#${l.toLowerCase()}`}
                         style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, textDecoration: "none", transition: "color .2s" }}
                         onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>{l}</a>
                 ))}
-                <Btn onClick={onCTA} style={{ padding: "9px 20px", fontSize: 13 }}>Get Early Access</Btn>
+                <Btn onClick={onCTA} style={{ padding: "9px 20px", fontSize: 13 }}>Test it out</Btn>
             </div>
         </nav>
     );
@@ -494,7 +494,7 @@ function FinalCTA({ onCTA }: { onCTA: () => void }) {
                 </p>
                 <Btn onClick={onCTA}
                     style={{ padding: "15px 44px", fontSize: 15, animation: "glow-pulse 2.5s ease-in-out infinite" }}>
-                    Start Free Analysis →
+                    Start Analysis →
                 </Btn>
             </div>
         </section>
