@@ -241,7 +241,7 @@ function Hero({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
                 }}>
                     Upload your batting or bowling footage. Our on-device AI detects
                     biomechanical weaknesses, tactical vulnerabilities, and generates
-                    personalised drill plans — powered by CrickLM, a transformer
+                    personalised drill plans, powered by CrickLM, a transformer
                     model built from scratch.
                 </p>
                 <div style={{
@@ -249,7 +249,6 @@ function Hero({ scrollY, onCTA }: { scrollY: number; onCTA: () => void }) {
                     animation: "fadeUp .9s ease forwards", opacity: 0, animationDelay: ".44s"
                 }}>
                     <Btn onClick={onCTA}>Analyze Performance →</Btn>
-                    <Btn variant="outline">▷ Watch Demo</Btn>
                 </div>
                 <div style={{
                     display: "flex", gap: 36, marginTop: 52, paddingTop: 32,
