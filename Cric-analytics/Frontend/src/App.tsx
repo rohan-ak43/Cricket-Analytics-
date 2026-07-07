@@ -33,8 +33,34 @@ const CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:#000000;color:#fff;font-family:'Inter',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+::-webkit-scrollbar{display:none}
+* { scrollbar-width: none; }
+.csb-track{
+  position:fixed;right:0;top:0;bottom:0;z-index:9999;
+  width:18px;display:flex;justify-content:center;align-items:flex-start;
+  pointer-events:auto;
+}
+.csb-thumb-wrap{
+  position:absolute;top:0;right:0;
+  width:4px;
+  background:transparent;
+  border-radius:8px;
+  transition:width .28s cubic-bezier(.4,0,.2,1), right .28s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.csb-thumb-wrap.hovered{
+  width:10px;
+  right:0;
+}
+.csb-thumb{
+  position:absolute;left:0;right:0;
+  border-radius:8px;
+  background:rgba(255,255,255,.18);
+  transition:background .2s ease;
+  cursor:grab;
+}
+.csb-thumb:hover,.csb-thumb.dragging{background:rgba(255,255,255,.55)}
+.csb-thumb.dragging{cursor:grabbing}
 .bb{font-family:'Bebas Neue',sans-serif}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.6)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -1058,6 +1084,167 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
 
 // ROOT
 
+// Custom animated scrollbar — smooth RAF + momentum inertia
+function CustomScrollbar() {
+    const trackRef   = useRef<HTMLDivElement>(null);
+    const thumbRef   = useRef<HTMLDivElement>(null);
+    const wrapRef    = useRef<HTMLDivElement>(null);
+    const [hovered, setHovered]   = useState(false);
+    const [dragging, setDragging] = useState(false);
+
+    // Drag state kept in refs so RAF closures always see fresh values
+    const isDragging   = useRef(false);
+    const lastClientY  = useRef(0);
+    const velocity     = useRef(0);       // px/frame momentum
+    const rafDrag      = useRef(0);
+    const rafMomentum  = useRef(0);
+    const rafThumb     = useRef(0);
+
+    // ── Thumb geometry ──────────────────────────────────────────────────
+    const getGeometry = () => {
+        const scrollH = document.documentElement.scrollHeight;
+        const viewH   = window.innerHeight;
+        const ratio   = viewH / scrollH;
+        const thumbH  = Math.max(ratio * viewH, 44);
+        const maxTop  = viewH - thumbH;
+        const maxScroll = scrollH - viewH;
+        const frac    = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+        return { thumbH, top: frac * maxTop, maxScroll, viewH };
+    };
+
+    // ── Sync thumb position via RAF (no React re-renders) ───────────────
+    const syncThumb = useCallback(() => {
+        const wrap  = wrapRef.current;
+        const thumb = thumbRef.current;
+        if (!wrap || !thumb) return;
+        const { thumbH, top, viewH } = getGeometry();
+        thumb.style.height = `${thumbH}px`;
+        thumb.style.transform = `translateY(${top}px)`;
+        wrap.style.height = `${viewH}px`;
+    }, []);
+
+    // ── Scroll listener — use RAF to batch updates ───────────────────────
+    useEffect(() => {
+        let ticking = false;
+        const onScroll = () => {
+            if (!ticking) {
+                rafThumb.current = requestAnimationFrame(() => {
+                    syncThumb();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+        syncThumb();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", syncThumb);
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            window.removeEventListener("resize", syncThumb);
+            cancelAnimationFrame(rafThumb.current);
+        };
+    }, [syncThumb]);
+
+    // ── Drag loop — runs inside requestAnimationFrame ────────────────────
+    const dragLoop = useCallback(() => {
+        if (!isDragging.current) return;
+        const dy   = lastClientY.current - (dragLoop as any)._prevY;
+        (dragLoop as any)._prevY = lastClientY.current;
+        velocity.current = dy;                          // track velocity for momentum
+        const { maxScroll, viewH } = getGeometry();
+        const scrollH = document.documentElement.scrollHeight;
+        const ratio   = scrollH / viewH;
+        window.scrollBy({ top: dy * ratio, behavior: "instant" } as any);
+        rafDrag.current = requestAnimationFrame(dragLoop);
+    }, []);
+
+    // ── Momentum loop — eases velocity to zero after release ─────────────
+    const momentumLoop = useCallback(() => {
+        if (Math.abs(velocity.current) < 0.3) { velocity.current = 0; return; }
+        velocity.current *= 0.88;                       // friction coefficient
+        const { maxScroll, viewH } = getGeometry();
+        const scrollH = document.documentElement.scrollHeight;
+        const ratio   = scrollH / viewH;
+        window.scrollBy({ top: velocity.current * ratio, behavior: "instant" } as any);
+        rafMomentum.current = requestAnimationFrame(momentumLoop);
+    }, []);
+
+    // ── Mouse down on thumb ──────────────────────────────────────────────
+    const onMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isDragging.current = true;
+        lastClientY.current = e.clientY;
+        (dragLoop as any)._prevY = e.clientY;
+        velocity.current = 0;
+        cancelAnimationFrame(rafMomentum.current);
+        cancelAnimationFrame(rafDrag.current);
+        rafDrag.current = requestAnimationFrame(dragLoop);
+        setDragging(true);
+    }, [dragLoop]);
+
+    // ── Global mouse-move / mouse-up ─────────────────────────────────────
+    useEffect(() => {
+        const onMove = (e: MouseEvent) => { lastClientY.current = e.clientY; };
+        const onUp   = () => {
+            if (!isDragging.current) return;
+            isDragging.current = false;
+            cancelAnimationFrame(rafDrag.current);
+            setDragging(false);
+            setHovered(false);
+            // kick off momentum
+            cancelAnimationFrame(rafMomentum.current);
+            rafMomentum.current = requestAnimationFrame(momentumLoop);
+        };
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup",   onUp);
+        return () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup",   onUp);
+        };
+    }, [momentumLoop]);
+
+    // ── Click on track (not thumb) ────────────────────────────────────────
+    const onTrackClick = useCallback((e: React.MouseEvent) => {
+        if (e.target === thumbRef.current) return;
+        const track = trackRef.current;
+        if (!track) return;
+        const rect = track.getBoundingClientRect();
+        const frac = (e.clientY - rect.top) / rect.height;
+        const { maxScroll } = getGeometry();
+        // Smooth-scroll via momentum easing from current position
+        const targetScroll = frac * maxScroll;
+        const start = window.scrollY;
+        const dist  = targetScroll - start;
+        const dur   = 420;
+        const t0    = performance.now();
+        const ease  = (t: number) => t < .5 ? 2*t*t : -1+(4-2*t)*t; // easeInOut
+        const tick  = (now: number) => {
+            const prog = Math.min((now - t0) / dur, 1);
+            window.scrollTo({ top: start + dist * ease(prog), behavior: "instant" } as any);
+            if (prog < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }, []);
+
+    return (
+        <div
+            ref={trackRef}
+            className="csb-track"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => !isDragging.current && setHovered(false)}
+            onClick={onTrackClick}
+        >
+            <div ref={wrapRef} className={`csb-thumb-wrap${hovered || dragging ? " hovered" : ""}`}>
+                <div
+                    ref={thumbRef}
+                    className={`csb-thumb${dragging ? " dragging" : ""}`}
+                    onMouseDown={onMouseDown}
+                />
+            </div>
+        </div>
+    );
+}
+
 export default function App() {
     const [view, setView] = useState<"landing" | "app">("landing");
     const [scrollY, setScrollY] = useState(0);
@@ -1074,6 +1261,7 @@ export default function App() {
     return (
         <>
             <style>{CSS}</style>
+            <CustomScrollbar />
             {view === "app" ? (
                 <AnalysisApp onBack={goBack} />
             ) : (
