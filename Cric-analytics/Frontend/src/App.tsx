@@ -1082,6 +1082,267 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
     );
 }
 
+// LOGIN PAGE
+
+function LoginPage({ onLogin }: { onLogin: () => void }) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPass, setShowPass] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [focused, setFocused] = useState<"email" | "password" | null>(null);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        if (!email.trim()) { setError("Email is required."); return; }
+        if (!password) { setError("Password is required."); return; }
+        setLoading(true);
+        // Simulate auth — replace with real call
+        setTimeout(() => {
+            setLoading(false);
+            onLogin();
+        }, 1200);
+    };
+
+    const inputStyle = (field: "email" | "password"): React.CSSProperties => ({
+        width: "100%", background: "rgba(255,255,255,0.04)",
+        border: `1px solid ${focused === field ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)"}`,
+        borderRadius: 12, padding: "14px 16px",
+        color: "#fff", fontSize: 14, fontFamily: "Inter",
+        outline: "none", transition: "border-color .2s, box-shadow .2s",
+        boxShadow: focused === field ? "0 0 0 3px rgba(255,255,255,0.06)" : "none",
+    });
+
+    return (
+        <div style={{
+            minHeight: "100vh", background: "#000",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "relative", overflow: "hidden"
+        }}>
+            {/* Animated grid bg */}
+            <div style={{
+                position: "absolute", inset: 0, pointerEvents: "none",
+                backgroundImage: `linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px)`,
+                backgroundSize: "52px 52px"
+            }} />
+            {/* Ambient glow top-left */}
+            <div style={{
+                position: "absolute", top: "-15%", left: "-10%",
+                width: 520, height: 520,
+                background: "radial-gradient(circle,rgba(255,255,255,0.04) 0%,transparent 68%)",
+                pointerEvents: "none"
+            }} />
+            {/* Ambient glow bottom-right */}
+            <div style={{
+                position: "absolute", bottom: "-20%", right: "-12%",
+                width: 480, height: 480,
+                background: "radial-gradient(circle,rgba(255,255,255,0.03) 0%,transparent 68%)",
+                pointerEvents: "none"
+            }} />
+            {/* Scan line */}
+            <div style={{
+                position: "absolute", left: 0, right: 0, height: 1,
+                background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent)",
+                animation: "scan 8s linear infinite", pointerEvents: "none"
+            }} />
+
+            {/* Card */}
+            <div style={{
+                position: "relative", zIndex: 10,
+                width: "100%", maxWidth: 420, padding: "0 24px",
+                animation: "fadeUp .7s ease forwards"
+            }}>
+                {/* Logo */}
+                <div style={{ textAlign: "center", marginBottom: 36 }}>
+                    <div style={{
+                        display: "inline-flex", alignItems: "center",
+                        justifyContent: "center", gap: 10, marginBottom: 8
+                    }}>
+                        <svg width="32" height="32" viewBox="0 0 28 28">
+                            <circle cx="14" cy="14" r="13" fill="none" stroke={G} strokeWidth="1.5" />
+                            <path d="M8 14 Q14 6 20 14 Q14 22 8 14Z" fill={G} opacity=".85" />
+                            <circle cx="14" cy="14" r="2.5" fill="#fff" />
+                        </svg>
+                        <span className="bb" style={{ fontSize: 28, letterSpacing: 3, color: "#fff" }}>CrickIQ</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.32)", letterSpacing: 1 }}>AI-POWERED CRICKET ANALYTICS</p>
+                </div>
+
+                {/* Glass form card */}
+                <div style={{
+                    background: "rgba(255,255,255,0.035)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 20, padding: "36px 32px",
+                    backdropFilter: "blur(24px)",
+                    boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)"
+                }}>
+                    <h2 style={{
+                        fontSize: 22, fontWeight: 600, marginBottom: 6, color: "#fff"
+                    }}>Welcome back</h2>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", marginBottom: 28 }}>
+                        Sign in to access your analysis dashboard
+                    </p>
+
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        {/* Email */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: .5 }}>EMAIL</label>
+                            <input
+                                id="login-email"
+                                type="email"
+                                autoComplete="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                onFocus={() => setFocused("email")}
+                                onBlur={() => setFocused(null)}
+                                placeholder="you@example.com"
+                                style={inputStyle("email")}
+                            />
+                        </div>
+
+                        {/* Password */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: .5 }}>PASSWORD</label>
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    id="login-password"
+                                    type={showPass ? "text" : "password"}
+                                    autoComplete="current-password"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    onFocus={() => setFocused("password")}
+                                    onBlur={() => setFocused(null)}
+                                    placeholder="••••••••"
+                                    style={{ ...inputStyle("password"), paddingRight: 46 }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPass(s => !s)}
+                                    style={{
+                                        position: "absolute", right: 14, top: "50%",
+                                        transform: "translateY(-50%)",
+                                        background: "none", border: "none",
+                                        color: "rgba(255,255,255,0.35)", cursor: "pointer",
+                                        padding: 0, fontSize: 14, lineHeight: 1
+                                    }}
+                                    aria-label={showPass ? "Hide password" : "Show password"}
+                                >
+                                    {showPass ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                            <line x1="1" y1="1" x2="23" y2="23" />
+                                        </svg>
+                                    ) : (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Forgot password */}
+                        <div style={{ textAlign: "right", marginTop: -8 }}>
+                            <a href="#" style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textDecoration: "none", transition: "color .2s" }}
+                                onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+                                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}>
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        {/* Error */}
+                        {error && (
+                            <div style={{
+                                padding: "10px 14px", borderRadius: 10,
+                                background: "rgba(239,68,68,0.08)",
+                                border: "1px solid rgba(239,68,68,0.25)",
+                                fontSize: 12, color: "#f87171"
+                            }}>
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Submit */}
+                        <button
+                            id="login-submit"
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                width: "100%", padding: "14px",
+                                background: loading ? "rgba(255,255,255,0.7)" : "#ffffff",
+                                color: "#000", border: "none", borderRadius: 12,
+                                fontSize: 14, fontWeight: 700, fontFamily: "Inter",
+                                cursor: loading ? "not-allowed" : "pointer",
+                                letterSpacing: .3, marginTop: 4,
+                                transition: "all .2s ease",
+                                boxShadow: "0 0 24px rgba(255,255,255,0.15)"
+                            }}
+                            onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = "0 0 40px rgba(255,255,255,0.3)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 0 24px rgba(255,255,255,0.15)"; }}
+                        >
+                            {loading ? (
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                    <svg className="spin" width="14" height="14" viewBox="0 0 36 36">
+                                        <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(0,0,0,.18)" strokeWidth="3" />
+                                        <circle cx="18" cy="18" r="14" fill="none" stroke="#000" strokeWidth="3"
+                                            strokeDasharray="88" strokeDashoffset="66" strokeLinecap="round" />
+                                    </svg>
+                                    Signing in…
+                                </span>
+                            ) : "Sign in →"}
+                        </button>
+                    </form>
+
+                    {/* Divider */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
+                        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>OR</span>
+                        <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                    </div>
+
+                    {/* Continue without login */}
+                    <button
+                        id="login-skip"
+                        type="button"
+                        onClick={onLogin}
+                        style={{
+                            width: "100%", padding: "13px",
+                            background: "transparent",
+                            color: "rgba(255,255,255,0.5)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                            borderRadius: 12, fontSize: 13,
+                            fontFamily: "Inter", fontWeight: 500,
+                            cursor: "pointer", transition: "all .2s",
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+                            e.currentTarget.style.color = "#fff";
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                            e.currentTarget.style.color = "rgba(255,255,255,0.5)";
+                        }}
+                    >
+                        Continue as guest
+                    </button>
+                </div>
+
+                {/* Sign up link */}
+                <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+                    Don't have an account?{" "}
+                    <a href="#" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none", transition: "color .2s" }}
+                        onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+                        onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}>
+                        Sign up
+                    </a>
+                </p>
+            </div>
+        </div>
+    );
+}
+
 // ROOT
 
 // Custom animated scrollbar — smooth RAF + momentum inertia
@@ -1246,7 +1507,7 @@ function CustomScrollbar() {
 }
 
 export default function App() {
-    const [view, setView] = useState<"landing" | "app">("landing");
+    const [view, setView] = useState<"login" | "landing" | "app">("login");
     const [scrollY, setScrollY] = useState(0);
 
     useEffect(() => {
@@ -1255,17 +1516,23 @@ export default function App() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
+    const handleLogin = () => { setView("landing"); window.scrollTo(0, 0); };
     const launchApp = () => { setView("app"); window.scrollTo(0, 0); };
     const goBack = () => { setView("landing"); window.scrollTo(0, 0); };
 
     return (
         <>
             <style>{CSS}</style>
-            <CustomScrollbar />
-            {view === "app" ? (
-                <AnalysisApp onBack={goBack} />
+            {view === "login" ? (
+                <LoginPage onLogin={handleLogin} />
+            ) : view === "app" ? (
+                <>
+                    <CustomScrollbar />
+                    <AnalysisApp onBack={goBack} />
+                </>
             ) : (
                 <>
+                    <CustomScrollbar />
                     <Navbar scrollY={scrollY} onCTA={launchApp} />
                     <Hero scrollY={scrollY} onCTA={launchApp} />
                     <Pipeline />
