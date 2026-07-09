@@ -7,7 +7,7 @@ import math
 import re
 import torch
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
  
 from model import CrickLM, CrickLMConfig
 from tokenizer import CrickTokenizer
@@ -382,8 +382,102 @@ def parse_generated_text(text: str, features: dict, player_type: str) -> dict:
         "pro_comparison": pro_comp,
         "model": "CrickLM-10M (local transformer)",
     }
- 
- 
+
+
+# Player-type detection 
+
+def detect_player_type(features: dict) -> Tuple[str, bool, float]:
+    
+    angles  = features.get("joint_angles_deg", {})
+    metrics = features.get("body_metrics", {})
+
+    rk       = angles.get("right_knee")
+    lk       = angles.get("left_knee")
+    re_      = angles.get("right_elbow")
+    wrist_h  = metrics.get("wrist_height_normalized", 0.5)
+    stance_r = metrics.get("stance_to_shoulder_ratio", 1.2)
+    sh_align = abs(metrics.get("shoulder_alignment_angle_deg", 0))
+
+    bat_votes  = 0
+    bowl_votes = 0
+
+    # Wrist height 
+    
+    if wrist_h < 0.42:
+        bat_votes += 3        
+    elif wrist_h < 0.55:
+        bat_votes += 2        
+    elif wrist_h > 0.70:
+        bowl_votes += 2       
+
+    # Knee angles 
+    
+    knees_in_bat_range = 0
+    if rk is not None and 95 <= rk <= 162:
+        knees_in_bat_range += 1
+        bat_votes += 1
+    elif rk is not None and (rk > 168 or rk < 90):
+        bowl_votes += 1
+
+    if lk is not None and 95 <= lk <= 162:
+        knees_in_bat_range += 1
+        bat_votes += 1
+    elif lk is not None and (lk > 168 or lk < 90):
+        bowl_votes += 1
+
+    # Strong batsman combinator 
+    
+    if knees_in_bat_range == 2 and wrist_h < 0.58:
+        bat_votes += 3
+
+    # Right elbow 
+    
+    if re_ is not None:
+        if 55 <= re_ <= 150:
+            bat_votes += 1
+        elif re_ > 160:
+            bowl_votes += 1
+
+    # Shoulder alignment 
+    
+    if sh_align > 22:
+        bowl_votes += 1
+    elif sh_align < 8:
+        bat_votes += 1
+
+    #  Stance width 
+    if stance_r >= 0.85:
+        bat_votes += 1
+
+    total = bat_votes + bowl_votes
+    if total == 0:
+        return "batsman", False, 0.5
+
+    bat_conf  = bat_votes / total
+    bowl_conf = bowl_votes / total
+    detected  = "batsman" if bat_conf >= bowl_conf else "bowler"
+    confidence = max(bat_conf, bowl_conf)
+
+    
+    print(
+        f"[PlayerDetect] wrist_h={wrist_h:.3f} rk={rk} lk={lk} re_={re_} "
+        f"sh_align={sh_align:.1f} stance_r={stance_r:.2f} | "
+        f"bat={bat_votes} bowl={bowl_votes} → {detected} ({confidence:.0%})"
+    )
+
+    return detected, False, confidence
+
+
+def check_player_mismatch(
+    features: dict, requested_type: str
+) -> Tuple[str, bool, float]:
+    """Return (detected_type, is_mismatch, confidence).
+    Triggers when confidence >= 0.58 to avoid false positives on ambiguous poses."""
+    detected, _, conf = detect_player_type(features)
+    mismatch = (detected != requested_type) and (conf >= 0.58)
+    return detected, mismatch, conf
+
+
 # Inference engine 
 class CrickLMInference:
     def __init__(
@@ -438,6 +532,30 @@ class CrickLMInference:
         return self.tokenizer.decode(out[0].tolist())
  
     def analyze(self, features: dict, player_type: str = "batsman") -> dict:
+        # Detect if the pose actually matches the requested player type
+        detected_type, mismatch, confidence = check_player_mismatch(features, player_type)
+ 
+        if mismatch:
+            # Return a clear mismatch response without running full analysis
+            return {
+                "summary": (
+                    f"This image appears to show a {detected_type}, not a {player_type}. "
+                    f"Please upload a {player_type} image or switch the player type to '{detected_type}'."
+                ),
+                "player_type": player_type,
+                "player_mismatch": True,
+                "detected_as": detected_type,
+                "mismatch_confidence": confidence,
+                "overall_score": 0,
+                "scores": {},
+                "weaknesses": [],
+                "vulnerable_zones": [],
+                "drills": [],
+                "strengths": [],
+                "pro_comparison": "",
+                "model": "CrickLM-10M (local transformer)",
+            }
+ 
         # Build the prompt
         prompt = build_analysis_prompt(features, player_type)
  
@@ -446,4 +564,6 @@ class CrickLMInference:
  
         # Parse into structured output using hybrid rule + generation approach
         result = parse_generated_text(generated, features, player_type)
+        result["player_mismatch"] = False
+        result["detected_as"] = detected_type
         return result
