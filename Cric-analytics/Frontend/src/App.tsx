@@ -19,6 +19,9 @@ interface Analysis {
     scores: Record<string, number>; weaknesses: Weakness[];
     vulnerable_zones: Zone[]; drills: Drill[]; strengths: string[];
     pro_comparison: string; model?: string;
+    player_mismatch?: boolean;
+    detected_as?: string;
+    mismatch_confidence?: number;
 }
 interface ApiResult {
     success: boolean; elapsed_seconds: number;
@@ -641,6 +644,115 @@ const SEV_COLOR: Record<string, string> = {
     High: "#ef4444", Critical: "#ef4444", Med: "#fb923c", Low: G
 };
 
+function PlayerMismatchCard({
+    detectedAs, requestedType, confidence, annotatedImage, onReset, onSwitchType
+}: {
+    detectedAs: string;
+    requestedType: string;
+    confidence: number;
+    annotatedImage?: string;
+    onReset: () => void;
+    onSwitchType: (t: "batsman" | "bowler") => void;
+}) {
+    const pct = Math.round(confidence * 100);
+    const icon = detectedAs === "batsman" ? "🏏" : "🎳";
+    const wrongIcon = requestedType === "batsman" ? "🏏" : "🎳";
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Header banner */}
+            <div style={{
+                padding: "28px 28px 24px",
+                background: "rgba(251,146,60,0.06)",
+                border: "1px solid rgba(251,146,60,0.28)",
+                borderRadius: 18,
+                display: "flex", gap: 20, alignItems: "flex-start"
+            }}>
+                <div style={{
+                    width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                    background: "rgba(251,146,60,0.12)",
+                    border: "1px solid rgba(251,146,60,0.3)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 24
+                }}>⚠</div>
+                <div style={{ flex: 1 }}>
+                    <div style={{
+                        fontSize: 18, fontWeight: 700, color: "#fb923c", marginBottom: 6
+                    }}>Wrong Player Type Detected</div>
+                    <div style={{
+                        fontSize: 13, color: "rgba(255,255,255,.6)", lineHeight: 1.7
+                    }}>
+                        You selected <strong style={{ color: "#fff" }}>{wrongIcon} {requestedType}</strong> analysis,
+                        but this image appears to be a{" "}
+                        <strong style={{ color: "#fff" }}>{icon} {detectedAs}</strong>{" "}
+                        ({pct}% confidence). CrickIQ cannot give accurate bowling
+                        feedback on a batting stance.
+                    </div>
+                </div>
+            </div>
+
+            {/* Annotated image if available */}
+            {annotatedImage && (
+                <GlassCard hover={false} style={{ overflow: "hidden" }}>
+                    <div style={{
+                        fontSize: 10, color: "rgba(255,255,255,.3)",
+                        letterSpacing: 1.5, padding: "14px 20px 0"
+                    }}>MEDIAPIPE SKELETON OVERLAY</div>
+                    <img src={annotatedImage} alt="Annotated"
+                        style={{
+                            width: "100%", display: "block", borderRadius: "0 0 14px 14px",
+                            maxHeight: 320, objectFit: "contain", background: "#0c0c0c"
+                        }} />
+                </GlassCard>
+            )}
+
+            {/* Action row */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <button
+                    onClick={() => onSwitchType(detectedAs as "batsman" | "bowler")}
+                    style={{
+                        flex: 1, minWidth: 180,
+                        padding: "14px 20px", borderRadius: 12,
+                        background: "rgba(251,146,60,0.12)",
+                        border: "1px solid rgba(251,146,60,0.35)",
+                        color: "#fb923c", fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "Inter",
+                        transition: "all .2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(251,146,60,0.2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(251,146,60,0.12)"; }}
+                >
+                    Switch to {icon} {detectedAs.charAt(0).toUpperCase() + detectedAs.slice(1)} analysis
+                </button>
+                <button
+                    onClick={onReset}
+                    style={{
+                        flex: 1, minWidth: 180,
+                        padding: "14px 20px", borderRadius: 12,
+                        background: G2, border: `1px solid ${BORDER}`,
+                        color: "rgba(255,255,255,.7)", fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "Inter",
+                        transition: "all .2s"
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = G; e.currentTarget.style.color = G; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = "rgba(255,255,255,.7)"; }}
+                >
+                    ← Upload a different image
+                </button>
+            </div>
+
+            {/* Tip */}
+            <GlassCard hover={false} style={{ padding: "14px 18px" }}>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,.25)", letterSpacing: 1.5, marginBottom: 5 }}>TIP</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.45)", lineHeight: 1.7 }}>
+                    For best results, upload a <strong style={{ color: "rgba(255,255,255,.75)" }}>side-on
+                    full-body image</strong> of the correct player type.
+                    Batsmen should be holding a bat; bowlers should be mid-delivery or in run-up.
+                </div>
+            </GlassCard>
+        </div>
+    );
+}
+
 function ResultPanel({ result }: { result: ApiResult }) {
     const [tab, setTab] = useState(0);
     const { analysis, annotated_image, features } = result;
@@ -1065,7 +1177,11 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                             alignItems: "center", marginBottom: 20
                         }}>
                             <div>
-                                <h2 style={{ fontSize: 20, fontWeight: 600 }}>Analysis complete</h2>
+                                {result.analysis.player_mismatch ? (
+                                    <h2 style={{ fontSize: 20, fontWeight: 600, color: "#fb923c" }}>Wrong player type</h2>
+                                ) : (
+                                    <h2 style={{ fontSize: 20, fontWeight: 600 }}>Analysis complete</h2>
+                                )}
                                 <p style={{ fontSize: 12, color: "rgba(255,255,255,.38)", marginTop: 2 }}>
                                     {result.elapsed_seconds}s · {result.analysis.player_type} · CrickLM local model
                                 </p>
@@ -1074,7 +1190,21 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                                 ← New analysis
                             </Btn>
                         </div>
-                        <ResultPanel result={result} />
+                        {result.analysis.player_mismatch ? (
+                            <PlayerMismatchCard
+                                detectedAs={result.analysis.detected_as || "batsman"}
+                                requestedType={result.analysis.player_type}
+                                confidence={result.analysis.mismatch_confidence || 0.7}
+                                annotatedImage={result.annotated_image}
+                                onReset={reset}
+                                onSwitchType={(t) => {
+                                    setPlayerType(t);
+                                    reset();
+                                }}
+                            />
+                        ) : (
+                            <ResultPanel result={result} />
+                        )}
                     </div>
                 )}
             </div>
