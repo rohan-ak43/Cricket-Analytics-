@@ -1,3 +1,5 @@
+//Cric-analytics/Frontend/src/App.tsx
+
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // Design tokens 
@@ -745,7 +747,7 @@ function PlayerMismatchCard({
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,.25)", letterSpacing: 1.5, marginBottom: 5 }}>TIP</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,.45)", lineHeight: 1.7 }}>
                     For best results, upload a <strong style={{ color: "rgba(255,255,255,.75)" }}>side-on
-                    full-body image</strong> of the correct player type.
+                        full-body image</strong> of the correct player type.
                     Batsmen should be holding a bat; bowlers should be mid-delivery or in run-up.
                 </div>
             </GlassCard>
@@ -1477,35 +1479,35 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
 
 // Custom animated scrollbar — smooth RAF + momentum inertia
 function CustomScrollbar() {
-    const trackRef   = useRef<HTMLDivElement>(null);
-    const thumbRef   = useRef<HTMLDivElement>(null);
-    const wrapRef    = useRef<HTMLDivElement>(null);
-    const [hovered, setHovered]   = useState(false);
+    const trackRef = useRef<HTMLDivElement>(null);
+    const thumbRef = useRef<HTMLDivElement>(null);
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const [hovered, setHovered] = useState(false);
     const [dragging, setDragging] = useState(false);
 
     // Drag state kept in refs so RAF closures always see fresh values
-    const isDragging   = useRef(false);
-    const lastClientY  = useRef(0);
-    const velocity     = useRef(0);       // px/frame momentum
-    const rafDrag      = useRef(0);
-    const rafMomentum  = useRef(0);
-    const rafThumb     = useRef(0);
+    const isDragging = useRef(false);
+    const lastClientY = useRef(0);
+    const velocity = useRef(0);       // px/frame momentum
+    const rafDrag = useRef(0);
+    const rafMomentum = useRef(0);
+    const rafThumb = useRef(0);
 
     // ── Thumb geometry ──────────────────────────────────────────────────
     const getGeometry = () => {
         const scrollH = document.documentElement.scrollHeight;
-        const viewH   = window.innerHeight;
-        const ratio   = viewH / scrollH;
-        const thumbH  = Math.max(ratio * viewH, 44);
-        const maxTop  = viewH - thumbH;
+        const viewH = window.innerHeight;
+        const ratio = viewH / scrollH;
+        const thumbH = Math.max(ratio * viewH, 44);
+        const maxTop = viewH - thumbH;
         const maxScroll = scrollH - viewH;
-        const frac    = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+        const frac = maxScroll > 0 ? window.scrollY / maxScroll : 0;
         return { thumbH, top: frac * maxTop, maxScroll, viewH };
     };
 
     // ── Sync thumb position via RAF (no React re-renders) ───────────────
     const syncThumb = useCallback(() => {
-        const wrap  = wrapRef.current;
+        const wrap = wrapRef.current;
         const thumb = thumbRef.current;
         if (!wrap || !thumb) return;
         const { thumbH, top, viewH } = getGeometry();
@@ -1539,12 +1541,12 @@ function CustomScrollbar() {
     // ── Drag loop — runs inside requestAnimationFrame ────────────────────
     const dragLoop = useCallback(() => {
         if (!isDragging.current) return;
-        const dy   = lastClientY.current - (dragLoop as any)._prevY;
+        const dy = lastClientY.current - (dragLoop as any)._prevY;
         (dragLoop as any)._prevY = lastClientY.current;
         velocity.current = dy;                          // track velocity for momentum
         const { maxScroll, viewH } = getGeometry();
         const scrollH = document.documentElement.scrollHeight;
-        const ratio   = scrollH / viewH;
+        const ratio = scrollH / viewH;
         window.scrollBy({ top: dy * ratio, behavior: "instant" } as any);
         rafDrag.current = requestAnimationFrame(dragLoop);
     }, []);
@@ -1555,7 +1557,7 @@ function CustomScrollbar() {
         velocity.current *= 0.88;                       // friction coefficient
         const { maxScroll, viewH } = getGeometry();
         const scrollH = document.documentElement.scrollHeight;
-        const ratio   = scrollH / viewH;
+        const ratio = scrollH / viewH;
         window.scrollBy({ top: velocity.current * ratio, behavior: "instant" } as any);
         rafMomentum.current = requestAnimationFrame(momentumLoop);
     }, []);
@@ -1576,7 +1578,7 @@ function CustomScrollbar() {
     // ── Global mouse-move / mouse-up ─────────────────────────────────────
     useEffect(() => {
         const onMove = (e: MouseEvent) => { lastClientY.current = e.clientY; };
-        const onUp   = () => {
+        const onUp = () => {
             if (!isDragging.current) return;
             isDragging.current = false;
             cancelAnimationFrame(rafDrag.current);
@@ -1587,10 +1589,10 @@ function CustomScrollbar() {
             rafMomentum.current = requestAnimationFrame(momentumLoop);
         };
         window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup",   onUp);
+        window.addEventListener("mouseup", onUp);
         return () => {
             window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup",   onUp);
+            window.removeEventListener("mouseup", onUp);
         };
     }, [momentumLoop]);
 
@@ -1605,11 +1607,11 @@ function CustomScrollbar() {
         // Smooth-scroll via momentum easing from current position
         const targetScroll = frac * maxScroll;
         const start = window.scrollY;
-        const dist  = targetScroll - start;
-        const dur   = 420;
-        const t0    = performance.now();
-        const ease  = (t: number) => t < .5 ? 2*t*t : -1+(4-2*t)*t; // easeInOut
-        const tick  = (now: number) => {
+        const dist = targetScroll - start;
+        const dur = 420;
+        const t0 = performance.now();
+        const ease = (t: number) => t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOut
+        const tick = (now: number) => {
             const prog = Math.min((now - t0) / dur, 1);
             window.scrollTo({ top: start + dist * ease(prog), behavior: "instant" } as any);
             if (prog < 1) requestAnimationFrame(tick);

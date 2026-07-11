@@ -596,7 +596,6 @@ class CrickLMInference:
         print(f"[CrickLM] Model ready on {self.device}")
  
     def _generate_text(self, prompt: str, max_tokens: int = 80) -> str:
-        """Run CrickLM to generate a continuation of the prompt."""
         if not self._loaded:
             return ""
         ids = self.tokenizer.encode(prompt, add_bos=True, add_eos=False)
