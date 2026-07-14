@@ -1904,10 +1904,10 @@ export default function App() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    const handleLogin = () => { setView("landing"); window.scrollTo(0, 0); };
+    const handleLogin = () => { setView("app"); window.scrollTo(0, 0); };
     const goToSignUp = () => { setView("signup"); window.scrollTo(0, 0); };
     const goToLogin = () => { setView("login"); window.scrollTo(0, 0); };
-    const handleSignUp = () => { setView("landing"); window.scrollTo(0, 0); };
+    const handleSignUp = () => { setView("app"); window.scrollTo(0, 0); };
     const launchApp = () => { setView("app"); window.scrollTo(0, 0); };
     const goBack = () => { setView("landing"); window.scrollTo(0, 0); };
 
