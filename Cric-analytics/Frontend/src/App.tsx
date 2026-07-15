@@ -546,7 +546,7 @@ function Footer({ onProduct }: { onProduct: () => void }) {
         <footer style={{
             borderTop: `1px solid ${BORDER}`, padding: "44px 80px",
             display: "flex", justifyContent: "space-between", alignItems: "center",
-            flexWrap: "wrap", gap: 20
+            flexWrap: "wrap", gap: 20, position: "relative"
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <svg width="20" height="20" viewBox="0 0 28 28">
@@ -557,7 +557,7 @@ function Footer({ onProduct }: { onProduct: () => void }) {
                 <span className="bb" style={{ fontSize: 17, letterSpacing: 2 }}>CrickIQ</span>
                 <span style={{ fontSize: 10, color: "rgba(255,255,255,.2)", marginLeft: 6 }}>© 2025</span>
             </div>
-            <div style={{ display: "flex", gap: 24 }}>
+            <div style={{ display: "flex", gap: 24, position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
                 {["Product", "Docs", "Privacy", "Contact"].map(l => (
                     <a key={l} href={l === "Product" || l === "Contact" ? "#" : "#"}
                         onClick={(e) => handleLink(l, e)}
