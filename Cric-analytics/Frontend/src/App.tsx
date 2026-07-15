@@ -558,7 +558,7 @@ function Footer({ onProduct }: { onProduct: () => void }) {
                 <span style={{ fontSize: 10, color: "rgba(255,255,255,.2)", marginLeft: 6 }}>© 2025</span>
             </div>
             <div style={{ display: "flex", gap: 24 }}>
-                {["Product", "Docs", "API", "Privacy", "Contact"].map(l => (
+                {["Product", "Docs", "Privacy", "Contact"].map(l => (
                     <a key={l} href={l === "Product" || l === "Contact" ? "#" : "#"}
                         onClick={(e) => handleLink(l, e)}
                         style={{ fontSize: 12, color: "rgba(255,255,255,.3)", textDecoration: "none", transition: "color .2s", cursor: "pointer" }}
