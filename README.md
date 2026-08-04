@@ -225,7 +225,7 @@ npm run dev
 
 ---
 
-## Author
+## About Me
 
 Built by **A Rohan**
 AI Engineer, ML Enthusiast, Full Stack Developer
