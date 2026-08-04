@@ -224,8 +224,3 @@ npm run dev
 - Expanding CrickLM's training data with more professional reference footage
 
 ---
-
-## Author
-
-Built by **A Rohan**
-AI Engineer, ML Enthusiast, Full Stack Developer
