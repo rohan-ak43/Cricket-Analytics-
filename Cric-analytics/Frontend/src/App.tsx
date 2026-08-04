@@ -555,7 +555,6 @@ function Footer({ onProduct }: { onProduct: () => void }) {
                     <circle cx="14" cy="14" r="2.5" fill="#fff" />
                 </svg>
                 <span className="bb" style={{ fontSize: 17, letterSpacing: 2 }}>CrickIQ</span>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,.2)", marginLeft: 6 }}>© 2025</span>
             </div>
             <div style={{ display: "flex", gap: 24, position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
                 {["Product", "Docs", "Privacy", "Contact"].map(l => (
@@ -567,7 +566,7 @@ function Footer({ onProduct }: { onProduct: () => void }) {
                 ))}
             </div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,.18)" }}>
-                Built by A Rohan · CrickLM (10M params, from scratch)
+                CrickLM (10M params, from scratch)
             </div>
         </footer>
     );
@@ -1894,22 +1893,78 @@ function CustomScrollbar() {
     );
 }
 
+const getInitialView = (): "login" | "signup" | "landing" | "app" => {
+    const path = window.location.pathname;
+    if (path === "/product") return "app";
+    if (path === "/signup") return "signup";
+    if (path === "/") return "landing";
+    return "login";
+};
+
 export default function App() {
-    const [view, setView] = useState<"login" | "signup" | "landing" | "app">("login");
+    const [view, setView] = useState<"login" | "signup" | "landing" | "app">(getInitialView);
     const [scrollY, setScrollY] = useState(0);
 
     useEffect(() => {
+        if ('scrollRestoration' in window.history) {
+            window.history.scrollRestoration = 'manual';
+        }
+
         const onScroll = () => setScrollY(window.scrollY);
         window.addEventListener("scroll", onScroll, { passive: true });
-        return () => window.removeEventListener("scroll", onScroll);
+
+        if (!window.history.state || window.history.state.idx === undefined) {
+            window.history.replaceState(
+                { view: getInitialView(), scrollY: window.scrollY, idx: 0 },
+                "",
+                window.location.pathname
+            );
+        }
+
+        const onPopState = (e: PopStateEvent) => {
+            if (e.state && e.state.view) {
+                setView(e.state.view);
+                if (e.state.scrollY !== undefined) {
+                    setTimeout(() => window.scrollTo(0, e.state.scrollY), 0);
+                }
+            } else {
+                setView(getInitialView());
+                window.scrollTo(0, 0);
+            }
+        };
+
+        window.addEventListener("popstate", onPopState);
+
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            window.removeEventListener("popstate", onPopState);
+        };
     }, []);
 
-    const handleLogin = () => { setView("landing"); window.scrollTo(0, 0); };
-    const goToSignUp = () => { setView("signup"); window.scrollTo(0, 0); };
-    const goToLogin = () => { setView("login"); window.scrollTo(0, 0); };
-    const handleSignUp = () => { setView("landing"); window.scrollTo(0, 0); };
-    const launchApp = () => { setView("app"); window.scrollTo(0, 0); };
-    const goBack = () => { setView("landing"); window.scrollTo(0, 0); };
+    const navigateTo = (newView: "login" | "signup" | "landing" | "app") => {
+        const urlMap = { login: "/login", signup: "/signup", landing: "/", app: "/product" };
+        const currentIdx = window.history.state?.idx ?? 0;
+        
+        window.history.replaceState({ view, scrollY: window.scrollY, idx: currentIdx }, "", window.location.pathname);
+        window.history.pushState({ view: newView, scrollY: 0, idx: currentIdx + 1 }, "", urlMap[newView]);
+        
+        setView(newView);
+        window.scrollTo(0, 0);
+    };
+
+    const handleLogin = () => navigateTo("landing");
+    const goToSignUp = () => navigateTo("signup");
+    const goToLogin = () => navigateTo("login");
+    const handleSignUp = () => navigateTo("landing");
+    const launchApp = () => navigateTo("app");
+    const goBack = () => {
+        const currentIdx = window.history.state?.idx ?? 0;
+        if (currentIdx > 0) {
+            window.history.back();
+        } else {
+            navigateTo("landing");
+        }
+    };
 
     return (
         <>
