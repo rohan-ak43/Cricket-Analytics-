@@ -608,35 +608,33 @@ class CrickLMInference:
         return self.tokenizer.decode(out[0].tolist())
  
     def analyze(self, features: dict, player_type: str = "batsman") -> dict:
-        
-        # Step 1: Auto-detect from pose 
+ 
+        # Step 1: Auto-detect from pose
         detected_type, confidence = detect_player_type(features)
  
-        # Step 2: Check for mismatch 
-        mismatch         = detected_type != player_type
-        mismatch_warning = None
+        # Step 2: Check for mismatch
+        # A confident mismatch (>=62%) means the user selected the wrong type.
+        is_mismatch = (detected_type != player_type) and confidence >= 0.62
+        actual_type = detected_type if is_mismatch else player_type
  
-        if mismatch and confidence >= 0.62:
-            actual_type = detected_type
-            mismatch_warning = (
-                f"You selected '{player_type}' but this image appears to show "
-                f"a {detected_type} (auto-detected with {int(confidence*100)}% confidence). "
-                f"Analysis has been automatically switched to {detected_type} mode."
-            )
-        else:
-            actual_type = player_type
- 
-        # Step 3: Build prompt + generate 
+        # Step 3: Build prompt + generate
         prompt    = build_analysis_prompt(features, actual_type)
         generated = self._generate_text(prompt)
  
-        # Step 4: Parse into structured result 
+        # Step 4: Parse into structured result
         result = parse_generated_text(generated, features, actual_type)
  
-        # Step 5: Inject mismatch info 
-        if mismatch_warning:
-            result["mismatch_warning"]   = mismatch_warning
-            result["auto_detected"]      = detected_type
+        # Step 5: Always write mismatch fields so the frontend can reliably
+        result["player_mismatch"]     = is_mismatch
+        result["detected_as"]        = detected_type
+        result["mismatch_confidence"] = confidence
+ 
+        if is_mismatch:
+            result["mismatch_warning"]   = (
+                f"You selected '{player_type}' but this image appears to show "
+                f"a {detected_type} (auto-detected with {int(confidence * 100)}% confidence). "
+                f"Analysis has been automatically switched to {detected_type} mode."
+            )
             result["original_selection"] = player_type
  
         return result
