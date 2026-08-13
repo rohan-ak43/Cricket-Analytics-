@@ -1004,33 +1004,67 @@ function ResultPanel({ result }: { result: ApiResult }) {
     );
 }
 
+// ── Session state ─────────────────────────────────────────────────────────
+// All analysis-session fields live in one object so a single setState call
+// atomically resets everything, including playerType. This is the single
+// source of truth that prevents mode bleed across sessions.
+type Session = {
+    playerType: "batsman" | "bowler";
+    loading: boolean;
+    result: ApiResult | null;
+    error: string | null;
+    preview: string | null;
+};
+
+const FRESH_SESSION: Session = {
+    playerType: "batsman", // always reset to the neutral default
+    loading: false,
+    result: null,
+    error: null,
+    preview: null,
+};
+
 function AnalysisApp({ onBack }: { onBack: () => void }) {
-    const [playerType, setPlayerType] = useState<"batsman" | "bowler">("batsman");
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<ApiResult | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const [session, setSession] = useState<Session>(FRESH_SESSION);
+
+    // Keep a ref that is always current so handleFile can read the
+    // live playerType without being captured in a stale closure.
+    const playerTypeRef = useRef<"batsman" | "bowler">(session.playerType);
+    useEffect(() => {
+        playerTypeRef.current = session.playerType;
+    }, [session.playerType]);
 
     const handleFile = useCallback(async (file: File) => {
-        setError(null); setResult(null);
-        setPreview(URL.createObjectURL(file));
-        setLoading(true);
+        // Read from ref — guaranteed to reflect the latest selection even if
+        // the React render cycle has not yet flushed the state update.
+        const currentPlayerType = playerTypeRef.current;
+        setSession(s => ({
+            ...s,
+            error: null,
+            result: null,
+            preview: URL.createObjectURL(file),
+            loading: true,
+        }));
         const fd = new FormData();
         fd.append("file", file);
-        fd.append("player_type", playerType);
+        fd.append("player_type", currentPlayerType);
         try {
             const res = await fetch(`${API_URL}/analyze`, { method: "POST", body: fd });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || "Analysis failed");
-            setResult(data);
+            setSession(s => ({ ...s, result: data, loading: false }));
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Unknown error");
-        } finally {
-            setLoading(false);
+            setSession(s => ({
+                ...s,
+                error: e instanceof Error ? e.message : "Unknown error",
+                loading: false,
+            }));
         }
-    }, [playerType]);
+    }, []); // no playerType dep — reads from ref instead
 
-    const reset = () => { setResult(null); setError(null); setPreview(null); };
+    // Atomically wipes every piece of session state, including playerType.
+    // This is the only correct way to implement "New Analysis".
+    const startNewAnalysis = () => setSession(FRESH_SESSION);
 
     return (
         <div style={{ minHeight: "100vh", background: BG }}>
@@ -1066,18 +1100,18 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
 
             <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 32px 60px" }}>
                 {/* Player type */}
-                {!result && (
+                {!session.result && (
                     <div style={{ marginBottom: 24 }}>
                         <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", letterSpacing: 1, marginBottom: 10 }}>
                             PLAYER TYPE</div>
                         <div style={{ display: "flex", gap: 8 }}>
                             {(["batsman", "bowler"] as const).map(t => (
-                                <button key={t} onClick={() => setPlayerType(t)}
+                                <button key={t} onClick={() => setSession(s => ({ ...s, playerType: t }))}
                                     style={{
                                         padding: "8px 22px", borderRadius: 9,
-                                        border: `1px solid ${playerType === t ? G : BORDER}`,
-                                        background: playerType === t ? G2 : GLASS,
-                                        color: playerType === t ? G : "rgba(255,255,255,.5)",
+                                        border: `1px solid ${session.playerType === t ? G : BORDER}`,
+                                        background: session.playerType === t ? G2 : GLASS,
+                                        color: session.playerType === t ? G : "rgba(255,255,255,.5)",
                                         fontSize: 13, fontWeight: 500, cursor: "pointer",
                                         fontFamily: "Inter", transition: "all .2s", backdropFilter: "blur(8px)"
                                     }}>
@@ -1089,7 +1123,7 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                 )}
 
                 {/* Error */}
-                {error && (
+                {session.error && (
                     <div style={{
                         padding: "14px 18px", background: "rgba(239,68,68,.08)",
                         border: "1px solid rgba(239,68,68,.25)", borderRadius: 12, marginBottom: 20,
@@ -1099,15 +1133,15 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "#ef4444", marginBottom: 3 }}>
                                 Analysis failed</div>
-                            <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{error}</div>
-                            {error.includes("fetch") && (
+                            <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{session.error}</div>
+                            {session.error.includes("fetch") && (
                                 <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 4 }}>
                                     Make sure backend is running:{" "}
                                     <code style={{ color: G }}>uvicorn main:app --port 8000</code>
                                 </div>
                             )}
                         </div>
-                        <button onClick={reset}
+                        <button onClick={startNewAnalysis}
                             style={{
                                 marginLeft: "auto", background: "none", border: "none",
                                 color: "rgba(255,255,255,.3)", cursor: "pointer", fontSize: 16
@@ -1116,18 +1150,18 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                 )}
 
                 {/* Main content */}
-                {!result ? (
+                {!session.result ? (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                         <div>
-                            <UploadZone onFile={handleFile} loading={loading} />
-                            {preview && !loading && (
+                            <UploadZone onFile={handleFile} loading={session.loading} />
+                            {session.preview && !session.loading && (
                                 <div style={{ marginTop: 12, position: "relative" }}>
-                                    <img src={preview} alt="preview"
+                                    <img src={session.preview} alt="preview"
                                         style={{
                                             width: "100%", borderRadius: 12, maxHeight: 260,
                                             objectFit: "contain", background: "#0c0c0c"
                                         }} />
-                                    <button onClick={reset}
+                                    <button onClick={startNewAnalysis}
                                         style={{
                                             position: "absolute", top: 8, right: 8,
                                             background: "rgba(0,0,0,.7)", border: "none", color: "#fff",
@@ -1178,33 +1212,36 @@ function AnalysisApp({ onBack }: { onBack: () => void }) {
                             alignItems: "center", marginBottom: 20
                         }}>
                             <div>
-                                {result.analysis.player_mismatch ? (
+                                {session.result.analysis.player_mismatch ? (
                                     <h2 style={{ fontSize: 20, fontWeight: 600, color: "#fb923c" }}>Wrong player type</h2>
                                 ) : (
                                     <h2 style={{ fontSize: 20, fontWeight: 600 }}>Analysis complete</h2>
                                 )}
                                 <p style={{ fontSize: 12, color: "rgba(255,255,255,.38)", marginTop: 2 }}>
-                                    {result.elapsed_seconds}s · {result.analysis.player_type} · CrickLM local model
+                                    {session.result.elapsed_seconds}s · {session.result.analysis.player_type} · CrickLM local model
                                 </p>
                             </div>
-                            <Btn variant="outline" onClick={reset} style={{ padding: "8px 18px", fontSize: 12 }}>
+                            {/* "New analysis" atomically resets the entire session,
+                                including playerType, so the next run starts fresh */}
+                            <Btn variant="outline" onClick={startNewAnalysis} style={{ padding: "8px 18px", fontSize: 12 }}>
                                 ← New analysis
                             </Btn>
                         </div>
-                        {result.analysis.player_mismatch ? (
+                        {session.result.analysis.player_mismatch ? (
                             <PlayerMismatchCard
-                                detectedAs={result.analysis.detected_as || "batsman"}
-                                requestedType={result.analysis.player_type}
-                                confidence={result.analysis.mismatch_confidence || 0.7}
-                                annotatedImage={result.annotated_image}
-                                onReset={reset}
+                                detectedAs={session.result.analysis.detected_as || "batsman"}
+                                requestedType={session.result.analysis.player_type}
+                                confidence={session.result.analysis.mismatch_confidence || 0.7}
+                                annotatedImage={session.result.annotated_image}
+                                onReset={startNewAnalysis}
                                 onSwitchType={(t) => {
-                                    setPlayerType(t);
-                                    reset();
+                                    // Switch type and reset — the new session starts
+                                    // with the corrected playerType pre-selected
+                                    setSession({ ...FRESH_SESSION, playerType: t });
                                 }}
                             />
                         ) : (
-                            <ResultPanel result={result} />
+                            <ResultPanel result={session.result} />
                         )}
                     </div>
                 )}
